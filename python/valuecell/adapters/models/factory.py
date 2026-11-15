@@ -137,6 +137,8 @@ class GoogleProvider(ModelProvider):
             id=model_id,
             api_key=self.config.api_key,
             temperature=params.get("temperature"),
+            # Google Search grounding; the web-search tools pass search=True.
+            search=bool(params.get("search", False)),
         )
 
     def create_embedder(self, model_id: Optional[str] = None, **kwargs):
