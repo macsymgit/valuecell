@@ -26,7 +26,9 @@ jobs:
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
         with:
-          version: latest
+          # Keep in sync with @biomejs/biome in bun.lock; `latest` broke CI
+          # when a new release rejected keys in biome.json.
+          version: 2.3.9
 
       - name: Run Biome checks
         run: biome ci --diagnostic-level=error ./src
