@@ -1,0 +1,47 @@
+# Full stack: `docker compose up -d --build`, then open http://localhost:<WEB_PORT>.
+# The frontend (nginx) serves the UI and proxies /api to the backend, so only
+# one host port is needed.
+#
+# Ports: set in the repo-root .env or the shell, or edit the defaults below.
+#   VALUECELL_WEB_PORT  UI + API on the host           (default 3000)
+#   VALUECELL_API_PORT  backend directly, bound to localhost (default 8001)
+services:
+  backend:
+    build:
+      context: ./python
+      dockerfile: ../docker/DockerFile
+    env_file: .env
+    environment:
+      # Override values in .env that would break inside a container.
+      API_HOST: 0.0.0.0
+      API_PORT: "8000"
+    ports:
+      # Optional direct API access (e.g. the Tauri app or curl). Remove if unused.
+      - "127.0.0.1:${VALUECELL_API_PORT:-8001}:8000"
+    # Required: the server shuts down when stdin closes.
+    stdin_open: true
+    extra_hosts:
+      # Reach services on the host (e.g. a local LLM server) as
+      # http://host.docker.internal:<port>. Built into Docker Desktop; needed on Linux.
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # SQLite DB, LanceDB and .knowledge live here.
+      # Caveat: settings saved from the UI are written to a .env in this volume,
+      # and that file overrides env_file values on the next start.
+      - valuecell-data:/root/.config/valuecell
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend.Dockerfile
+    ports:
+      - "${VALUECELL_WEB_PORT:-3000}:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  valuecell-data:

@@ -20,6 +20,8 @@ from valuecell.agents.sources import (
     search_projects,
     search_vcs,
 )
+from valuecell.agents.sources.brave import brave_search
+from valuecell.config.constants import DEFAULT_GOOGLE_SEARCH_MODEL_ID
 from valuecell.utils.path import get_knowledge_path
 
 from .knowledge import insert_md_file_to_knowledge, insert_pdf_file_to_knowledge
@@ -247,6 +249,7 @@ async def web_search(query: str) -> str:
 
     This function uses the centralized configuration system to create model instances.
     It supports multiple search providers:
+    - Brave Search API - whenever BRAVE_API_KEY is set
     - Google (Gemini with search enabled) - when WEB_SEARCH_PROVIDER=google and GOOGLE_API_KEY is set
     - Perplexity (via OpenRouter) - default fallback
 
@@ -257,6 +260,9 @@ async def web_search(query: str) -> str:
         A summary of the top search results.
     """
     from valuecell.utils.model import create_model_with_provider
+
+    if os.getenv("BRAVE_API_KEY"):
+        return await brave_search(query)
 
     # Check which provider to use based on environment configuration
     if os.getenv("WEB_SEARCH_PROVIDER", "google").lower() == "google" and os.getenv(
@@ -292,7 +298,8 @@ async def _web_search_google(query: str) -> str:
     # The search=True parameter enables Google Search grounding for real-time information
     model = create_model_with_provider(
         provider="google",
-        model_id="gemini-2.5-flash",
+        # Empty env value means "use the default", hence `or`.
+        model_id=os.getenv("GOOGLE_SEARCH_MODEL_ID") or DEFAULT_GOOGLE_SEARCH_MODEL_ID,
         search=True,  # Enable Google Search grounding
     )
     response = await Agent(model=model).arun(query)

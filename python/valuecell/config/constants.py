@@ -33,6 +33,10 @@ DEFAULT_TIMEZONE = "UTC"
 # Supported Language Codes
 SUPPORTED_LANGUAGE_CODES = [lang[0] for lang in SUPPORTED_LANGUAGES]
 
+# Gemini model behind the Google Search grounded web-search tools (news and
+# research agents). Override with the GOOGLE_SEARCH_MODEL_ID env var.
+DEFAULT_GOOGLE_SEARCH_MODEL_ID = "gemini-3.1-flash-lite"
+
 # Database Configuration
 DB_CHARSET = "utf8mb4"
 DB_COLLATION = "utf8mb4_unicode_ci"

@@ -1,7 +1,7 @@
+# Build context must be ./python (see compose.yaml at the repo root).
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
-# Install uv.
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+ENV UV_LINK_MODE=copy
 
 WORKDIR /app
 
@@ -9,16 +9,21 @@ WORKDIR /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --locked --no-install-project
+    uv sync --locked --no-install-project --no-dev
 
 # Copy the application into the container.
 COPY . /app
 
-# Install the application dependencies.
+# Install the project itself.
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked
+    uv sync --locked --no-dev
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    API_HOST=0.0.0.0 \
+    API_PORT=8000
 
 EXPOSE 8000
 
-# Run the application.
-CMD ["uv", "run", "python", "main.py", "--host", "0.0.0.0", "--port", "8000"]
+# The server exits when stdin closes (control channel used by the desktop
+# shell), so run the container with stdin open (`stdin_open: true` / `-i`).
+CMD ["python", "-m", "valuecell.server.main"]

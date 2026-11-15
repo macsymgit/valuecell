@@ -1,0 +1,7 @@
+**/.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+logs
+# Untracked legacy integrations (with their own venvs); not imported by the backend.
+third_party
